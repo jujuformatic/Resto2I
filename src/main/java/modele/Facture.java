@@ -11,7 +11,7 @@ public class Facture {
     private int Id;
 
     @OneToOne
-    @MapsId
+    @JoinColumn(name = "ID_COMMANDE")
     private Commande commande;
 
     @Column(length = 255,

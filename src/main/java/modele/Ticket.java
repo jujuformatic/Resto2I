@@ -10,7 +10,8 @@ public class Ticket {
             name = "numero_transaction")
     private int Id;
 
-    @OneToOne @MapsId
+    @OneToOne
+    @JoinColumn(name = "ID_COMMANDE")
     private Commande commande;
 
     public Ticket() {}
