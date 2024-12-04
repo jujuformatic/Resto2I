@@ -5,10 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
-import modele.Commande;
-import modele.Facture;
-import modele.Item;
-import modele.Ticket;
+import modele.*;
 
 import java.util.HashSet;
 
@@ -22,12 +19,15 @@ public class TestFacture {
             Item item1 = new Item("Pizza","Plat",15.50,10);
             Item item2 = new Item("Patates","Plat",10.00,10);
 
+            Tables table1 = new Tables();
+            Tables table2 = new Tables();
+
             HashSet<Item> items = new HashSet<>();
             items.add(item1);
             items.add(item2);
 
-            Commande commande1 = new Commande();
-            Commande commande2 = new Commande(1,"RAS",items);
+            Commande commande1 = new Commande(table1);
+            Commande commande2 = new Commande(table2,"RAS",items);
 
             commande1.addItem(item1);
 

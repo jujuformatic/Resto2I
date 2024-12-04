@@ -20,12 +20,15 @@ public class TestTicket {
             Item item1 = new Item("Pizza","Plat",15.50,10);
             Item item2 = new Item("Patates","Plat",10.00,10);
 
+            Tables table1 = new Tables();
+            Tables table2 = new Tables();
+
             HashSet<Item> items = new HashSet<>();
             items.add(item1);
             items.add(item2);
 
-            Commande commande1 = new Commande();
-            Commande commande2 = new Commande(1,"RAS",items);
+            Commande commande1 = new Commande(table1);
+            Commande commande2 = new Commande(table2,"RAS",items);
 
             Ticket t1 = new Ticket(commande1);
             Ticket t2 = new Ticket(commande2);
