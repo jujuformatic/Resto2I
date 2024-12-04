@@ -5,16 +5,8 @@ import jakarta.persistence.*;
 import java.util.*;
 
 @Entity
-public class Menu {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(unique = true,
-            nullable = false)
-    private int Id;
-
-    @Column(length = 255)
-    private String nom;
-
+@DiscriminatorValue("MENU")
+public class Menu extends Item{
     @ManyToMany
     @JoinTable(name = "menu_item", // Nom de la table de jonction
                joinColumns = @JoinColumn(name = "menu_id"), // Colonne pour le Menu
@@ -23,23 +15,20 @@ public class Menu {
     private Set<Item> itemsMenu = new HashSet<>();
 
     public Menu() {
+        super();
+        this.setCategorie("Menu");
     }
 
-    public Menu(String nom) {
-        this.nom = nom;
+    public Menu(String nom, double prix, float TVA) {
+        this();
+        this.setNom(nom);
+        this.setPrix(prix);
+        this.setTVA(TVA);
     }
 
-    public Menu(String nom, Set<Item> items) {
-        this.nom = nom;
+    public Menu(String nom, double prix, float TVA, Set<Item> items) {
+        this(nom,prix,TVA);
         this.itemsMenu = items;
-    }
-
-    @Override
-    public String toString() {
-        return "Menu{" +
-                "Id=" + Id +
-                ", items=" + itemsMenu +
-                '}';
     }
 
     public void addItem(Item item) {
