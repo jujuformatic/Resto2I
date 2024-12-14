@@ -4,12 +4,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 
-public class Carte extends JPanel {
+public class ViewCarte extends JPanel {
     private ArrayList<String> boissons;
     private ArrayList<String> plats;
     private ArrayList<String> menus;
 
-    public Carte(CardLayout cardLayout, JPanel mainPanel) {
+    public ViewCarte(CardLayout cardLayout, JPanel mainPanel) {
         this.setLayout(new BorderLayout());
 
         JLabel title = new JLabel("Editer la Carte", SwingConstants.CENTER);

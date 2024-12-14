@@ -2,14 +2,12 @@ package vuecontrole;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class Fenetre extends JFrame {
     private MainMenu menu;
-    private Carte carte;
-    private Commande commande;
-    private Historique historique;
+    private ViewCarte viewCarte;
+    private ViewCommande viewCommande;
+    private ViewHistorique viewHistorique;
     private CardLayout cardLayout;
     private JPanel mainPanel;
 
@@ -26,15 +24,15 @@ public class Fenetre extends JFrame {
 
         // Initialize panels
         menu = new MainMenu();
-        carte = new Carte(cardLayout, mainPanel);
-        commande = new Commande(cardLayout, mainPanel, carte);
-        historique = new Historique(cardLayout, mainPanel);
+        viewCarte = new ViewCarte(cardLayout, mainPanel);
+        viewCommande = new ViewCommande(cardLayout, mainPanel, viewCarte, "MainMenu");
+        viewHistorique = new ViewHistorique(cardLayout, mainPanel);
 
         // Add panels to mainPanel
         mainPanel.add(menu, "MainMenu");
-        mainPanel.add(carte, "Carte");
-        mainPanel.add(commande, "Commande");
-        mainPanel.add(historique, "Historique");
+        mainPanel.add(viewCarte, "Carte");
+        mainPanel.add(viewCommande, "Commande");
+        mainPanel.add(viewHistorique, "Historique");
 
         // Add action to switch to Carte panel
         menu.getEditerCarteButton().addActionListener(e -> cardLayout.show(mainPanel, "Carte"));
