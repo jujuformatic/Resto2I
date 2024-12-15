@@ -3,7 +3,6 @@ package modele;
 import jakarta.persistence.*;
 
 import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.time.*;
 
@@ -13,9 +12,6 @@ public class Commande {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(unique = true)
     private int Id;
-
-    @Column(name = "noTable")
-    private int table;
 
     @Column(columnDefinition = "NUMERIC(7,2)",
             nullable = false,
@@ -28,6 +24,13 @@ public class Commande {
 
     @Column(length = 255)
     private String commentaire;
+
+    @Column()
+    private boolean valide;
+
+    @ManyToOne
+    @JoinColumn(name = "no_table")
+    private Tables table;
 
     @ManyToMany
     @JoinTable(name = "commande_item", // Nom de la table de jonction
@@ -43,8 +46,9 @@ public class Commande {
     private Facture facture;
 
 
-    public Commande() {
+    public Commande(Tables table) {
         this.prixTotal = 0;
+        this.valide = false;
 
         LocalDateTime now = LocalDateTime.now();
         int year = now.getYear() - 1900;
@@ -55,11 +59,13 @@ public class Commande {
         int second = now.getSecond();
         int nano = now.getNano();
         this.horaire = new Timestamp(year,month,day,hour,minute,second,nano);
+
+        this.table = table;
+        table.setOccupe(true);
     }
 
-    public Commande(int table, String commentaire, Set<Item> items) {
-        this();
-        this.table = table;
+    public Commande(Tables table, String commentaire, Set<Item> items) {
+        this(table);
         this.commentaire = commentaire;
         this.itemsCommande = items;
     }
@@ -78,5 +84,32 @@ public class Commande {
             item.setCommandes(new HashSet<>());
         }
         item.getCommandes().add(this);
+        this.calculerPrixTotal();
+    }
+
+    public void validerCommande() {
+        this.valide = true;
+        this.table.setOccupe(false);
+    }
+
+    public void calculerPrixTotal() {
+        this.prixTotal = 0;
+        for(Item i : this.itemsCommande) {
+            this.prixTotal = this.prixTotal + i.getPrix();
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Commande{" +
+                "Id=" + Id +
+                ", table=" + table.getId() +
+                ", prixTotal=" + prixTotal +
+                ", horaire=" + horaire +
+                ", commentaire='" + commentaire + '\'' +
+                ", itemsCommande=" +
+                ", ticket=" + ticket +
+                ", facture=" + facture +
+                '}';
     }
 }

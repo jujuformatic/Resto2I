@@ -1,6 +1,5 @@
 package test;
 
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -24,22 +23,27 @@ public class TestMenu {
             items.add(item1);
             items.add(item2);
 
-            Menu menu1 = new Menu("menu1");
+            Menu menu1 = new Menu("menu1",20.00,10);
             menu1.addItem(item1);
-            Menu menu2 = new Menu("menu2",items);
+            Menu menu2 = new Menu("menu2",30.00,10,items);
 
             em.persist(item1);
             em.persist(item2);
+
             em.persist(menu1);
             em.persist(menu2);
+
             et.commit();
-            System.out.println(menu1);
-            System.out.println(menu2);
         } catch (Exception ex){
             System.out.println(">>>>> Erreur !!");
-            et.rollback();
+            ex.printStackTrace();
+            if (et.isActive()) {
+                et.rollback();
+            }
+        } finally {
+            em.close();
+            emf.close();
         }
-
     }
-
 }
+
