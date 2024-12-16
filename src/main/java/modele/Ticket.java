@@ -19,4 +19,11 @@ public class Ticket {
     public Ticket(Commande commande) {
         this.commande = commande;
     }
+
+    @Override
+    public String toString() {
+        return "Ticket{" +
+                "Id=" + Id +
+                '}';
+    }
 }

@@ -39,4 +39,15 @@ public class Facture {
         this.conditionsPaiement = conditionsPaiement;
         this.numeroTVAClient = numeroTVAClient;
     }
+
+    @Override
+    public String toString() {
+        return "Facture{" +
+                "Id=" + Id +
+                ", nomClient='" + nomClient + '\'' +
+                ", coordonneesClient='" + coordonneesClient + '\'' +
+                ", conditionsPaiement='" + conditionsPaiement + '\'' +
+                ", numeroTVAClient=" + numeroTVAClient +
+                '}';
+    }
 }

@@ -1,4 +1,5 @@
 package vuecontrole;
+import modele.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,6 +48,7 @@ public class ViewHistorique extends JPanel {
 
     private void updateCommandesPanel() {
         commandesPanel.removeAll();
+        
 
         // Données temporaires : liste de commandes avec numéro, date, et prix total
         List<String[]> commandes = Arrays.asList(
