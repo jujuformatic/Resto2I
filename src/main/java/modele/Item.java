@@ -17,7 +17,7 @@ public class Item {
     private String nom;
 
     @Column(nullable = false, length = 255)
-    private String categorie;
+    private Categorie categorie;
 
     @Column(columnDefinition = "NUMERIC(7,2)", nullable = false)
     private double prix;
@@ -34,7 +34,6 @@ public class Item {
     @ManyToMany(mappedBy = "itemsCommande", cascade = CascadeType.PERSIST)
     private Set<Commande> commandes = new HashSet<>();
 
-
     public Item(){
         this.hidden = false;
     }
@@ -44,7 +43,7 @@ public class Item {
         this.nom = nom;
     }
 
-    public Item(String nom, String categorie, double prix, float TVA) {
+    public Item(String nom, Categorie categorie, double prix, float TVA) {
         this();
         this.nom = nom;
         this.categorie = categorie;
@@ -84,8 +83,16 @@ public class Item {
         this.nom = nom;
     }
 
-    public void setCategorie(String categorie) {
+    public String getNom() {
+        return nom;
+    }
+
+    public void setCategorie(Categorie categorie) {
         this.categorie = categorie;
+    }
+
+    public Categorie getCategorie() {
+        return categorie;
     }
 
     public void setPrix(double prix) {
@@ -108,5 +115,11 @@ public class Item {
                 ", menus=" + menus +
                 ", commandes=" + commandes +
                 '}';
+    }
+
+    public enum Categorie {
+        MENU,
+        PLAT,
+        BOISSON
     }
 }
