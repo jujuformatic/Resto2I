@@ -45,8 +45,7 @@ public class Commande {
     @OneToOne(mappedBy = "commande")
     private Facture facture;
 
-
-    public Commande(Tables table) {
+    public Commande() {
         this.prixTotal = 0;
         this.valide = false;
 
@@ -59,6 +58,10 @@ public class Commande {
         int second = now.getSecond();
         int nano = now.getNano();
         this.horaire = new Timestamp(year,month,day,hour,minute,second,nano);
+    }
+
+    public Commande(Tables table) {
+        this();
 
         this.table = table;
         table.setOccupe(true);

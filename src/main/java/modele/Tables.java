@@ -32,4 +32,13 @@ public class Tables {
     public int getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "Tables{" +
+                "id=" + id +
+                ", nbPersonnes=" + nbPersonnes +
+                ", occupe=" + occupe +
+                '}';
+    }
 }
