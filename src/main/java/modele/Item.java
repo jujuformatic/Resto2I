@@ -17,6 +17,7 @@ public class Item {
     private String nom;
 
     @Column(nullable = false, length = 255)
+    @Enumerated(EnumType.STRING)
     private Categorie categorie;
 
     @Column(columnDefinition = "NUMERIC(7,2)", nullable = false)
