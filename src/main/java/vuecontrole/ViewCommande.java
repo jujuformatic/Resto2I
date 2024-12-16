@@ -1,9 +1,13 @@
 package vuecontrole;
 
+import com.mysql.cj.util.DnsSrv;
+import modele.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class ViewCommande extends JPanel {
     private JButton retourMenu;
@@ -18,6 +22,7 @@ public class ViewCommande extends JPanel {
     private HashMap<String, Integer> recapItems;
     private ArrayList<JButton> carteButtons; // Liste pour stocker les boutons de la carte
     private String previousView;
+    private Commande commande = new Commande();
 
     public ViewCommande(CardLayout cardLayout, JPanel mainPanel, ViewCarte carte, String previousView) {
         this.setLayout(new BorderLayout());
@@ -58,7 +63,7 @@ public class ViewCommande extends JPanel {
 
                     if (!clickedLine.isEmpty()) {
                         String itemName = clickedLine.split(" x ")[0];
-                        decrementItemInRecap(itemName);
+                        decrementItemInRecap(itemName, commande);
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -84,11 +89,32 @@ public class ViewCommande extends JPanel {
 
         this.add(recapPanel, BorderLayout.WEST);
 
+        // Get items BDD
+        RetrieveData data = new RetrieveData();
+        List<Item> items = data.getItems();
+        List<Item> boissons = new ArrayList<>();
+        List<Item> plats = new ArrayList<>();
+        List<Item> menus = new ArrayList<>();
+
+        for(Item i : items) {
+            if(i.getCategorie() == Item.Categorie.BOISSON) {
+                boissons.add(i);
+            }
+            if(i.getCategorie() == Item.Categorie.PLAT) {
+                plats.add(i);
+            }
+            if(i.getCategorie() == Item.Categorie.MENU) {
+                menus.add(i);
+            }
+        }
+
+
+
         // Carte Panel
         cartePanel = new JPanel(new GridLayout(1, 3, 10, 10));
-        cartePanel.add(createCarteColumn("Boissons", carte.getBoissons()));
-        cartePanel.add(createCarteColumn("Plats", carte.getPlats()));
-        cartePanel.add(createCarteColumn("Menus", carte.getMenus()));
+        cartePanel.add(createCarteColumn("Boissons", boissons));
+        cartePanel.add(createCarteColumn("Plats", plats));
+        cartePanel.add(createCarteColumn("Menus", menus));
 
         this.add(cartePanel, BorderLayout.CENTER);
 
@@ -98,7 +124,7 @@ public class ViewCommande extends JPanel {
         this.add(retourMenu, BorderLayout.SOUTH);
     }
 
-    private JPanel createCarteColumn(String title, ArrayList<String> items) {
+    private JPanel createCarteColumn(String title, List<Item> items) {
         JPanel panel = new JPanel(new BorderLayout());
 
         JLabel label = new JLabel(title, SwingConstants.CENTER);
@@ -108,9 +134,9 @@ public class ViewCommande extends JPanel {
         JPanel itemsPanel = new JPanel();
         itemsPanel.setLayout(new BoxLayout(itemsPanel, BoxLayout.Y_AXIS));
 
-        for (String item : items) {
-            JButton itemButton = new JButton(item);
-            itemButton.addActionListener(e -> addItemToRecap(item));
+        for (Item item : items) {
+            JButton itemButton = new JButton(item.getNom());
+            itemButton.addActionListener(e -> addItemToRecap(item, commande));
             carteButtons.add(itemButton); // Ajouter le bouton à la liste
             itemsPanel.add(itemButton);
         }
@@ -120,12 +146,13 @@ public class ViewCommande extends JPanel {
         return panel;
     }
 
-    private void addItemToRecap(String item) {
-        recapItems.put(item, recapItems.getOrDefault(item, 0) + 1);
-        updateRecapArea();
+    private void addItemToRecap(Item item, Commande commande) {
+        recapItems.put(item.getNom(), recapItems.getOrDefault(item.getNom(), 0) + 1);
+        commande.addItem(item);
+        updateRecapArea(commande);
     }
 
-    private void decrementItemInRecap(String item) {
+    private void decrementItemInRecap(String item, Commande commande) {
         if (recapItems.containsKey(item)) {
             int count = recapItems.get(item);
             if (count > 1) {
@@ -133,11 +160,11 @@ public class ViewCommande extends JPanel {
             } else {
                 recapItems.remove(item);
             }
-            updateRecapArea();
+            updateRecapArea(commande);
         }
     }
 
-    private void updateRecapArea() {
+    private void updateRecapArea(Commande commande) {
         recapArea.setText(""); // Clear the recap area
 
         StringBuilder recapText = new StringBuilder();
@@ -151,7 +178,7 @@ public class ViewCommande extends JPanel {
         }
 
         recapArea.setText(recapText.toString());
-        totalPriceLabel.setText("Total: " + totalPrice + "€");
+        totalPriceLabel.setText("Total: " + commande.getPrixTotal() + "€");
     }
 
     private void validateCommand(CardLayout cardLayout, JPanel mainPanel) {
@@ -170,7 +197,7 @@ public class ViewCommande extends JPanel {
                 "Annulation de la commande", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.YES_OPTION) {
             recapItems.clear();
-            updateRecapArea();
+            updateRecapArea(commande);
             cardLayout.show(mainPanel, "MainMenu");
         }
         resetCommande();
@@ -178,7 +205,7 @@ public class ViewCommande extends JPanel {
 
     private void resetCommande() {
         recapItems.clear();
-        updateRecapArea();
+        updateRecapArea(commande);
         totalPriceLabel.setText("Total: 0€");
         tableNumberLabel.setText("Table: 1"); // Tu peux ajuster le numéro de table si nécessaire
     }
