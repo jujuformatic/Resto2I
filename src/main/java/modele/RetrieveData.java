@@ -8,7 +8,7 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 public class RetrieveData {
-    public void getCommandes() {
+    public List<Commande> getCommandes() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
         EntityManager em = emf.createEntityManager();
 
@@ -20,6 +20,7 @@ public class RetrieveData {
             for (Commande commande : commandes) {
                 System.out.println(commande);
             }
+            return commandes;
         } finally {
             em.close();
             emf.close();
@@ -44,7 +45,7 @@ public class RetrieveData {
         }
     }
 
-    public void getItems() {
+    public List<Item> getItems() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
         EntityManager em = emf.createEntityManager();
 
@@ -56,6 +57,7 @@ public class RetrieveData {
             for (Item item : items) {
                 System.out.println(item);
             }
+            return items;
         } finally {
             em.close();
             emf.close();
@@ -98,7 +100,7 @@ public class RetrieveData {
         }
     }
 
-    public void getTables() {
+    public List<Tables> getTables() {
         EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
         EntityManager em = emf.createEntityManager();
 
@@ -110,6 +112,7 @@ public class RetrieveData {
             for (Tables table : tables) {
                 System.out.println(table);
             }
+            return tables;
         } finally {
             em.close();
             emf.close();

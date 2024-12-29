@@ -1,8 +1,11 @@
+// TODO : gérer le top des ventes --> menu déroulant pour avoir chaque top + mise à jour des infos de la zone
+
 package vuecontrole;
 import modele.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -10,6 +13,7 @@ public class ViewHistorique extends JPanel {
     private CardLayout cardLayout;
     private JPanel mainPanel;
     private JPanel commandesPanel;
+    private List<Commande> commandes = new ArrayList<>();
 
     public ViewHistorique(CardLayout cardLayout, JPanel mainPanel) {
         this.cardLayout = cardLayout;
@@ -48,20 +52,19 @@ public class ViewHistorique extends JPanel {
 
     private void updateCommandesPanel() {
         commandesPanel.removeAll();
-        
+        RetrieveData dataCommandes = new RetrieveData();
+        commandes = dataCommandes.getCommandes();
 
-        // Données temporaires : liste de commandes avec numéro, date, et prix total
-        List<String[]> commandes = Arrays.asList(
-                new String[]{"100", "20/11/2024", "55.55€"},
-                new String[]{"99", "20/11/2024", "55.55€"},
-                new String[]{"98", "20/11/2024", "55.55€"},
-                new String[]{"101", "20/11/2024", "55.55€"}
-        );
 
-        for (String[] cmd : commandes) {
-            JButton cmdButton = new JButton("<html>• n°" + cmd[0] + "<br>• " + cmd[1] + "<br>• " + cmd[2] + "</html>");
+
+        for (Commande comm : commandes) {
+            String id = String.valueOf(comm.getId());
+            String horaire = String.valueOf(comm.getHoraire());
+            horaire = horaire.substring(8,10) + "/" + horaire.substring(5,7) + "/" + horaire.substring(0,4);
+            String prix = String.valueOf(comm.getPrixTotal());
+            JButton cmdButton = new JButton("<html>• n°" + id + "<br>• " + horaire + "<br>• " + prix + "€" + "</html>");
             cmdButton.setPreferredSize(new Dimension(100, 80));
-            cmdButton.addActionListener(e -> openCommandeDetail());
+            cmdButton.addActionListener(e -> openCommandeDetail(comm));
             commandesPanel.add(cmdButton);
         }
 
@@ -69,8 +72,9 @@ public class ViewHistorique extends JPanel {
         commandesPanel.repaint();
     }
 
-    private void openCommandeDetail() {
-        ViewCommande commandeView = new ViewCommande(cardLayout, mainPanel, new ViewCarte(cardLayout, mainPanel), "Historique");
+    private void
+    openCommandeDetail(Commande commande) {
+        ViewCommande commandeView = new ViewCommande(cardLayout, mainPanel, new ViewCarte(cardLayout, mainPanel), "Historique",commande);
         mainPanel.add(commandeView, "CommandeDetail");
         cardLayout.show(mainPanel, "CommandeDetail");
         commandeView.setButtonsEnabled(false);

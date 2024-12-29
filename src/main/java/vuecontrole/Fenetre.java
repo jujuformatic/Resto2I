@@ -25,7 +25,7 @@ public class Fenetre extends JFrame {
         // Initialize panels
         menu = new MainMenu();
         viewCarte = new ViewCarte(cardLayout, mainPanel);
-        viewCommande = new ViewCommande(cardLayout, mainPanel, viewCarte, "MainMenu");
+        viewCommande = new ViewCommande(cardLayout, mainPanel, viewCarte, "MainMenu", null);
         viewHistorique = new ViewHistorique(cardLayout, mainPanel);
 
         // Add panels to mainPanel

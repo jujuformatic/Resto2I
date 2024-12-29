@@ -1,12 +1,18 @@
+// TODO : Trouver un moyen pour actualiser toutes les pages à chaque retour au menu principal (cf. ViewHistorique)
+// TODO --> cf lien envoyé discord
+
+
 package vuecontrole;
 
-import com.mysql.cj.util.DnsSrv;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
 import modele.*;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 
 public class ViewCommande extends JPanel {
@@ -19,12 +25,14 @@ public class ViewCommande extends JPanel {
     private JTextArea recapArea;
     private JLabel totalPriceLabel;
     private JLabel tableNumberLabel;
-    private HashMap<String, Integer> recapItems;
+    private HashMap<String, Item> itemMap; // Map pour lier les noms des items aux objets Item
+    private HashMap<Item, Integer> recapItems;
     private ArrayList<JButton> carteButtons; // Liste pour stocker les boutons de la carte
     private String previousView;
-    private Commande commande = new Commande();
+    private Commande commande;
+    private Tables table = new Tables();
 
-    public ViewCommande(CardLayout cardLayout, JPanel mainPanel, ViewCarte carte, String previousView) {
+    public ViewCommande(CardLayout cardLayout, JPanel mainPanel, ViewCarte carte, String previousView, Commande command) {
         this.setLayout(new BorderLayout());
         this.previousView = previousView;
         carteButtons = new ArrayList<>();
@@ -34,15 +42,27 @@ public class ViewCommande extends JPanel {
         this.add(title, BorderLayout.NORTH);
 
         recapItems = new HashMap<>();
+        itemMap = new HashMap<>();
 
         // Recap Panel
         recapPanel = new JPanel(new BorderLayout());
         recapPanel.setBorder(BorderFactory.createTitledBorder("Résumé de la commande"));
 
         // Total price and table number panel
+        if (command == null) {
+            this.commande = new Commande();
+            getTableDispo();
+            commande.setTable(table);
+        }
+        else {
+            this.commande = command;
+            this.table = command.getTable();
+        }
+
+
         JPanel recapHeader = new JPanel(new GridLayout(1, 2));
-        totalPriceLabel = new JLabel("Total: 0€", SwingConstants.LEFT);
-        tableNumberLabel = new JLabel("Table: 1", SwingConstants.RIGHT);
+        totalPriceLabel = new JLabel("Total: " + this.commande.getPrixTotal() + "€", SwingConstants.LEFT);
+        tableNumberLabel = new JLabel("Table: " + table.getId(), SwingConstants.RIGHT);
         recapHeader.add(totalPriceLabel);
         recapHeader.add(tableNumberLabel);
 
@@ -63,7 +83,10 @@ public class ViewCommande extends JPanel {
 
                     if (!clickedLine.isEmpty()) {
                         String itemName = clickedLine.split(" x ")[0];
-                        decrementItemInRecap(itemName, commande);
+                        Item clickedItem = itemMap.get(itemName);
+                        if(clickedItem != null) {
+                            decrementItemInRecap(clickedItem);
+                        }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -80,7 +103,7 @@ public class ViewCommande extends JPanel {
         cancelButton = new JButton("Annuler la Commande");
         cancelButton.addActionListener(e -> cancelCommand(cardLayout, mainPanel));
         JButton printBillButton = new JButton("Imprimer le Ticket");
-        printBillButton.addActionListener(e -> displayTicket());
+        printBillButton.addActionListener(e -> displayTicket(commande));
 
         recapButtons.add(validateButton);
         recapButtons.add(cancelButton);
@@ -97,14 +120,16 @@ public class ViewCommande extends JPanel {
         List<Item> menus = new ArrayList<>();
 
         for(Item i : items) {
-            if(i.getCategorie() == Item.Categorie.BOISSON) {
-                boissons.add(i);
-            }
-            if(i.getCategorie() == Item.Categorie.PLAT) {
-                plats.add(i);
-            }
-            if(i.getCategorie() == Item.Categorie.MENU) {
-                menus.add(i);
+            if (!i.isHidden()) {
+                if (i.getCategorie() == Item.Categorie.BOISSON) {
+                    boissons.add(i);
+                }
+                if (i.getCategorie() == Item.Categorie.PLAT) {
+                    plats.add(i);
+                }
+                if (i.getCategorie() == Item.Categorie.MENU) {
+                    menus.add(i);
+                }
             }
         }
 
@@ -116,11 +141,13 @@ public class ViewCommande extends JPanel {
         cartePanel.add(createCarteColumn("Plats", plats));
         cartePanel.add(createCarteColumn("Menus", menus));
 
+        initRecap();
+
         this.add(cartePanel, BorderLayout.CENTER);
 
         // Retour Button
         retourMenu = new JButton("Retour");
-        retourMenu.addActionListener(e -> cardLayout.show(mainPanel, previousView));
+        retourMenu.addActionListener(e -> retourMenu(cardLayout,mainPanel));
         this.add(retourMenu, BorderLayout.SOUTH);
     }
 
@@ -136,7 +163,7 @@ public class ViewCommande extends JPanel {
 
         for (Item item : items) {
             JButton itemButton = new JButton(item.getNom());
-            itemButton.addActionListener(e -> addItemToRecap(item, commande));
+            itemButton.addActionListener(e -> addItemToRecap(item));
             carteButtons.add(itemButton); // Ajouter le bouton à la liste
             itemsPanel.add(itemButton);
         }
@@ -146,36 +173,49 @@ public class ViewCommande extends JPanel {
         return panel;
     }
 
-    private void addItemToRecap(Item item, Commande commande) {
-        recapItems.put(item.getNom(), recapItems.getOrDefault(item.getNom(), 0) + 1);
+    private void addItemToRecap(Item item) {
+        recapItems.put(item, recapItems.getOrDefault(itemMap.get(item.getNom()), 0) + 1);
         commande.addItem(item);
-        updateRecapArea(commande);
+        itemMap.put(item.getNom(),item);
+        updateRecapArea();
     }
 
-    private void decrementItemInRecap(String item, Commande commande) {
+    private void initRecap() {
+        System.out.println(commande);
+        List<Commande_Item> itemsCommande = commande.getItemsCommande();
+
+        for (Commande_Item ci : itemsCommande) {
+            recapItems.put(ci.getItem(),ci.getQuantite());
+            itemMap.put(ci.getItem().getNom(), ci.getItem());
+            updateRecapArea();
+        }
+    }
+
+    private void decrementItemInRecap(Item item) {
         if (recapItems.containsKey(item)) {
             int count = recapItems.get(item);
             if (count > 1) {
                 recapItems.put(item, count - 1);
             } else {
                 recapItems.remove(item);
+                itemMap.remove(item);
             }
-            updateRecapArea(commande);
+            commande.removeItem(item);
+            updateRecapArea();
         }
     }
 
-    private void updateRecapArea(Commande commande) {
+    private void updateRecapArea() {
         recapArea.setText(""); // Clear the recap area
 
         StringBuilder recapText = new StringBuilder();
-        int totalPrice = 0;
 
-        for (String item : recapItems.keySet()) {
+        for (Item item : recapItems.keySet()) {
             int count = recapItems.get(item);
-            totalPrice += count * 10; // Assume each item costs 10€ for this example
 
-            recapText.append(item).append(" x ").append(count).append("\n");
+            recapText.append(item.getNom()).append(" x ").append(count).append("\n");
         }
+
 
         recapArea.setText(recapText.toString());
         totalPriceLabel.setText("Total: " + commande.getPrixTotal() + "€");
@@ -190,6 +230,8 @@ public class ViewCommande extends JPanel {
             cardLayout.show(mainPanel, "MainMenu");
         }
         resetCommande();
+        commande.validerCommande();
+        commit(commande);
     }
 
     private void cancelCommand(CardLayout cardLayout, JPanel mainPanel) {
@@ -197,17 +239,27 @@ public class ViewCommande extends JPanel {
                 "Annulation de la commande", JOptionPane.YES_NO_OPTION);
         if (response == JOptionPane.YES_OPTION) {
             recapItems.clear();
-            updateRecapArea(commande);
+            updateRecapArea();
             cardLayout.show(mainPanel, "MainMenu");
         }
         resetCommande();
     }
 
+    private void retourMenu(CardLayout cardLayout, JPanel mainPanel) {
+
+        System.out.println("Commande enregistrée :");
+        recapItems.forEach((item, count) -> System.out.println(item + " x " + count));
+        cardLayout.show(mainPanel, "MainMenu");
+
+        resetCommande();
+        commit(commande);
+    }
+
     private void resetCommande() {
         recapItems.clear();
-        updateRecapArea(commande);
+        updateRecapArea();
         totalPriceLabel.setText("Total: 0€");
-        tableNumberLabel.setText("Table: 1"); // Tu peux ajuster le numéro de table si nécessaire
+        tableNumberLabel.setText("Table: " + this.table.getId()); // Tu peux ajuster le numéro de table si nécessaire
     }
 
     // Méthode pour bloquer ou débloquer les boutons
@@ -249,7 +301,7 @@ public class ViewCommande extends JPanel {
         ticketPanel.add(header);
 
         // Détails des articles
-        for (String item : recapItems.keySet()) {
+        for (Item item : recapItems.keySet()) {
             int count = recapItems.get(item);
             String itemLine = String.format("%-20s %5d %10s", item, count, "10€ + 10%");
             JLabel itemLabel = new JLabel(itemLine);
@@ -266,7 +318,7 @@ public class ViewCommande extends JPanel {
         return ticketPanel;
     }
 
-    private void displayTicket() {
+    private void displayTicket(Commande commande) {
         JDialog ticketDialog = new JDialog();
         ticketDialog.setTitle("Ticket de Caisse");
         ticketDialog.setSize(300, 400);
@@ -275,5 +327,41 @@ public class ViewCommande extends JPanel {
         JPanel ticketPanel = createTicketPanel();
         ticketDialog.add(ticketPanel);
         ticketDialog.setVisible(true);
+
+        Ticket t1 = new Ticket(commande);
+        commit(commande);
+        commit(t1);
+    }
+
+    private void getTableDispo() {
+        RetrieveData data = new RetrieveData();
+        List<Tables> tables = data.getTables();
+        for (Tables t : tables) {
+            if (!t.isOccupe()) {
+                this.table = t;
+                return;
+            }
+        }
+    }
+
+    private void commit(Object o) {
+        final EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
+        final EntityManager em = emf.createEntityManager();
+        final EntityTransaction et = em.getTransaction();
+        try {
+            et.begin();
+            em.persist(o);
+
+            et.commit();
+        } catch (Exception ex){
+            System.out.println(">>>>> Erreur !!");
+            ex.printStackTrace();
+            if (et.isActive()) {
+                et.rollback();
+            }
+        } finally {
+            em.close();
+            emf.close();
+        }
     }
 }
