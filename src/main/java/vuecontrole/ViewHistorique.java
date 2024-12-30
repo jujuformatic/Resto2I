@@ -1,9 +1,9 @@
-// TODO : gérer le top des ventes --> menu déroulant pour avoir chaque top + mise à jour des infos de la zone
-
 package vuecontrole;
 import modele.*;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,6 +14,11 @@ public class ViewHistorique extends JPanel {
     private JPanel mainPanel;
     private JPanel commandesPanel;
     private List<Commande> commandes = new ArrayList<>();
+    private JTextArea topVentesArea;
+    private JTable topVentesTable;
+    private List<TopVentes> topJour;
+    private List<TopVentes> topSemaine;
+    private List<TopVentes> topMois;
 
     public ViewHistorique(CardLayout cardLayout, JPanel mainPanel) {
         this.cardLayout = cardLayout;
@@ -29,18 +34,35 @@ public class ViewHistorique extends JPanel {
 
         this.add(new JScrollPane(commandesPanel), BorderLayout.CENTER);
 
+        // Initialiser les tops des ventes
+        topJour = new ArrayList<>();
+        topSemaine = new ArrayList<>();
+        topMois = new ArrayList<>();
+
+        RetrieveData data = new RetrieveData();
+        topJour = data.getTop("DAY");
+        topSemaine = data.getTop("WEEK");
+        topMois = data.getTop("MONTH");
+
         // Top des ventes
         JPanel topVentesPanel = new JPanel(new BorderLayout());
-        topVentesPanel.setPreferredSize(new Dimension(150, 0));
+        topVentesPanel.setPreferredSize(new Dimension(250, 0));
 
         JLabel topVentesTitle = new JLabel("Top des ventes :", SwingConstants.CENTER);
         topVentesTitle.setFont(new Font("Arial", Font.BOLD, 14));
         topVentesPanel.add(topVentesTitle, BorderLayout.NORTH);
 
-        JTextArea topVentesArea = new JTextArea();
-        topVentesArea.setEditable(false);
-        topVentesArea.setText("1. Steak & frites - 500€\n2. Thé - 300€\n3. Menu enfant - 250€\n...");
-        topVentesPanel.add(new JScrollPane(topVentesArea), BorderLayout.CENTER);
+        // Menu déroulant pour choisir le top des ventes
+        String[] options = {"Jour", "Semaine", "Mois"};
+        JComboBox<String> comboBox = new JComboBox<>(options);
+        comboBox.addActionListener(e -> updateTopVentes(comboBox.getSelectedItem().toString()));
+        topVentesPanel.add(comboBox, BorderLayout.SOUTH);
+
+        // Créer le modèle de table
+        DefaultTableModel tableModel = new DefaultTableModel(new Object[]{"Nom de l'item", "Prix total"}, 0);
+        topVentesTable = new JTable(tableModel);
+        JScrollPane scrollPane = new JScrollPane(topVentesTable);
+        topVentesPanel.add(scrollPane, BorderLayout.CENTER);
 
         this.add(topVentesPanel, BorderLayout.EAST);
 
@@ -48,6 +70,32 @@ public class ViewHistorique extends JPanel {
         JButton retourMenu = new JButton("Retour au Menu");
         retourMenu.addActionListener(e -> cardLayout.show(mainPanel, "MainMenu"));
         this.add(retourMenu, BorderLayout.SOUTH);
+
+        // Initialiser avec le top du jour
+        updateTopVentes("Jour");
+    }
+
+    private void updateTopVentes(String periode) {
+        List<TopVentes> topVentes;
+        switch (periode) {
+            case "Semaine":
+                topVentes = topSemaine;
+                break;
+            case "Mois":
+                topVentes = topMois;
+                break;
+            case "Jour":
+            default:
+                topVentes = topJour;
+                break;
+        }
+
+        DefaultTableModel tableModel = (DefaultTableModel) topVentesTable.getModel();
+        tableModel.setRowCount(0); // Clear existing rows
+
+        for (TopVentes vente : topVentes) {
+            tableModel.addRow(new Object[]{vente.getItemNom(), vente.getTotalRevenu() + "€"});
+        }
     }
 
     private void updateCommandesPanel() {

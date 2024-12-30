@@ -1,5 +1,5 @@
 // TODO : Trouver un moyen pour actualiser toutes les pages à chaque retour au menu principal (cf. ViewHistorique)
-// TODO --> cf lien envoyé discord
+// TODO --> cf lien envoyé discord (observer)
 
 
 package vuecontrole;

@@ -1,5 +1,3 @@
-// TODO : gérer la TVA --> bouton : à chaque clic, ca passe au taux suivant (cycle)
-
 package vuecontrole;
 
 import jakarta.persistence.EntityManager;
@@ -79,9 +77,17 @@ public class ViewCarte extends JPanel {
         JTextField newItemPrice = new JTextField();
         JButton addButton = new JButton("Add");
 
+        String[] cycleTexts = {"5.5%", "10%", "20%"};
+        JButton cycleButton = createCycleButton(cycleTexts);
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(newItemField, BorderLayout.CENTER);
+        topPanel.add(cycleButton, BorderLayout.EAST);
+
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(newItemPrice, BorderLayout.CENTER);
         bottomPanel.add(addButton, BorderLayout.EAST);
+
 
         addButton.addActionListener(e -> {
             Item.Categorie cat;
@@ -102,7 +108,11 @@ public class ViewCarte extends JPanel {
                 return;
             }
 
-            Item newItem = new Item(itemName,cat,itemPrice,10);
+            String TVAStr = cycleButton.getText();
+            TVAStr = TVAStr.substring(0, TVAStr.length() - 1);
+            float TVA = Float.parseFloat(TVAStr);
+
+            Item newItem = new Item(itemName,cat,itemPrice,TVA);
             if (!itemName.isEmpty() && !items.contains(newItem)) {
                 items.add(newItem);
                 newItemField.setText("");
@@ -112,9 +122,7 @@ public class ViewCarte extends JPanel {
             }
         });
 
-
-
-        addItemPanel.add(newItemField, BorderLayout.NORTH);
+        addItemPanel.add(topPanel, BorderLayout.NORTH);
         addItemPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         panel.add(new JScrollPane(itemsPanel), BorderLayout.CENTER);
@@ -150,6 +158,18 @@ public class ViewCarte extends JPanel {
         }
         itemsPanel.revalidate();
         itemsPanel.repaint();
+    }
+
+    private JButton createCycleButton(String[] texts) {
+        JButton button = new JButton(texts[0]);
+        final int[] index = {0}; // Utiliser un tableau pour permettre la modification dans l'ActionListener
+
+        button.addActionListener(e -> {
+            index[0] = (index[0] + 1) % texts.length; // Incrémenter l'index et le remettre à zéro si nécessaire
+            button.setText(texts[index[0]]); // Mettre à jour le texte du bouton
+        });
+
+        return button;
     }
 
     public ArrayList<Item> getBoissons() {

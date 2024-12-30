@@ -1,11 +1,9 @@
 package modele;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RetrieveData {
     public List<Commande> getCommandes() {
@@ -117,6 +115,32 @@ public class RetrieveData {
             em.close();
             emf.close();
         }
+    }
+
+    public List<TopVentes> getTop(String interval) {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
+        EntityManager em = emf.createEntityManager();
+
+        String sql = "SELECT i.nom AS item_nom, " +
+                     "SUM(ci.quantite) AS total_quantite, " +
+                     "SUM(ci.quantite * i.prix) AS total_revenu " +
+                     "FROM commande c " +
+                     "JOIN commande_item ci ON c.Id = ci.commande_id " +
+                     "JOIN item i ON ci.item_id = i.id " +
+                     "WHERE c.horaire >= (NOW() - INTERVAL 1 " + interval + ") " + // Filtrer les commandes selon l'intervalle
+                     "GROUP BY i.nom " +
+                     "ORDER BY total_revenu DESC";
+
+        Query query = em.createNativeQuery(sql);
+        List<Object[]> results = query.getResultList();
+
+        return results.stream()
+                .map(result -> new TopVentes(
+                        (String) result[0],
+                        ((Number) result[1]).longValue(),
+                        ((Number) result[2]).doubleValue()
+                ))
+                .collect(Collectors.toList());
     }
 
     public static void main(String[] args) {
