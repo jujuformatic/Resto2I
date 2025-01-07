@@ -44,18 +44,14 @@ public class ViewCarte extends JPanel {
 
     private void initializeData() {
         RetrieveData data = new RetrieveData();
-        java.util.List<Item> items = data.getItems();
+        List<Item> items = data.getItems();
 
         for(Item i : items) {
             if (!i.isHidden()) {
-                if (i.getCategorie() == Item.Categorie.BOISSON) {
-                    boissons.add(i);
-                }
-                if (i.getCategorie() == Item.Categorie.PLAT) {
-                    plats.add(i);
-                }
-                if (i.getCategorie() == Item.Categorie.MENU) {
-                    menus.add(i);
+                switch (i.getCategorie()) {
+                    case BOISSON -> boissons.add(i);
+                    case PLAT -> plats.add(i);
+                    case MENU -> menus.add(i);
                 }
             }
         }
@@ -73,34 +69,40 @@ public class ViewCarte extends JPanel {
         updateItemsPanel(itemsPanel, items);
 
         // Add item section
-        JPanel addItemPanel = new JPanel(new BorderLayout());
-        JTextField newItemField = new JTextField();
-        JTextField newItemPrice = new JTextField();
-        JButton addButton = new JButton("Add");
 
-        String[] cycleTexts = {"5.5%", "10%", "20%"};
-        JButton cycleButton = createCycleButton(cycleTexts);
+        JPanel addItemPanel = new JPanel(new BorderLayout());
+        JTextField newItemField = new JTextField("Nom de l'article");
+        JTextField newItemPrice = new JTextField("Prix de l'article");
+
+        setPlaceholderBehavior(newItemField, "Nom de l'article");
+        setPlaceholderBehavior(newItemPrice, "Prix de l'article");
+
+        String[] tvaOptions = {"TVA", "5.5%", "10%", "20%"};
+        JComboBox<String> tvaDropdown = new JComboBox<>(tvaOptions);
+
+        JButton addButton = new JButton("Ajouter");
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(newItemField, BorderLayout.CENTER);
-        topPanel.add(cycleButton, BorderLayout.EAST);
+        topPanel.add(tvaDropdown, BorderLayout.EAST);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.add(newItemPrice, BorderLayout.CENTER);
         bottomPanel.add(addButton, BorderLayout.EAST);
 
-
         addButton.addActionListener(e -> {
-            Item.Categorie cat;
-            if(title=="Boissons") {
-                cat = Item.Categorie.BOISSON;
-            } else if(title == "Plats") {
-                cat = Item.Categorie.PLAT;
-            } else {
-                cat = Item.Categorie.MENU;
-            }
+            Item.Categorie cat = switch (title) {
+                case "Boissons" -> Item.Categorie.BOISSON;
+                case "Plats" -> Item.Categorie.PLAT;
+                default -> Item.Categorie.MENU;
+            };
 
             String itemName = newItemField.getText().trim();
+            if (itemName.isEmpty() || itemName.equals("Nom de l'article")) {
+                JOptionPane.showMessageDialog(this, "Veuillez entrer un nom valide.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             double itemPrice = 0.0;
             try {
                 itemPrice = Double.parseDouble(newItemPrice.getText().trim());
@@ -108,16 +110,23 @@ public class ViewCarte extends JPanel {
                 JOptionPane.showMessageDialog(this, "Veuillez entrer un prix valide.", "Erreur", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            if (itemPrice <= 0) {
+                JOptionPane.showMessageDialog(this, "Veuillez entrer un prix supérieur à 0.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
-            String TVAStr = cycleButton.getText();
-            TVAStr = TVAStr.substring(0, TVAStr.length() - 1);
-            float TVA = Float.parseFloat(TVAStr);
+            String tvaStr = (String) tvaDropdown.getSelectedItem();
+            float TVA = (tvaStr != null && !tvaStr.equals("TVA")) ? Float.parseFloat(tvaStr.replace("%", "")) : 0.0f;
+            if (TVA == 0.0f) {
+                JOptionPane.showMessageDialog(this, "Veuillez sélectionner une TVA.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             Item newItem = new Item(itemName,cat,itemPrice,TVA);
             if (!itemName.isEmpty() && !items.contains(newItem)) {
                 items.add(newItem);
-                newItemField.setText("");
-                newItemPrice.setText("");
+                newItemField.setText("Nom de l'article");
+                newItemPrice.setText("Prix de l'article");
                 commit(newItem);
                 updateItemsPanel(itemsPanel, items);
             }
@@ -141,53 +150,41 @@ public class ViewCarte extends JPanel {
             String label = prixFormat + "€ | " + item.getNom();
 
             JPanel itemPanel = new JPanel(new BorderLayout());
+            itemPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
+            itemPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+
             JLabel itemLabel = new JLabel(label);
-            JButton removeButton = new JButton("x");
-            removeButton.addActionListener(e -> {
-                int confirmation = JOptionPane.showConfirmDialog(
-                        this,
-                        "Are you sure you want to remove " + item.getNom() + "?",
-                        "Confirm Removal",
-                        JOptionPane.YES_NO_OPTION
-                );
-                if (confirmation == JOptionPane.YES_OPTION) {
-                    items.remove(item);
-                    item.setHidden(true);
-                    updateItemsPanel(itemsPanel, items);
-                    merge(item);
+            itemLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            itemLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseClicked(java.awt.event.MouseEvent e) {
+                    int confirmation = JOptionPane.showConfirmDialog(
+                            null,
+                            "Supprimer " + item.getNom() + " ?",
+                            "Confirmation",
+                            JOptionPane.YES_NO_OPTION
+                    );
+                    if (confirmation == JOptionPane.YES_OPTION) {
+                        items.remove(item);
+                        item.setHidden(true);
+                        updateItemsPanel(itemsPanel, items);
+                        merge(item);
+                    }
+                }
+
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    itemLabel.setText("<html><strike>" + label + "</strike></html>");
+                }
+
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    itemLabel.setText(label);
                 }
             });
 
-            itemPanel.add(itemLabel, BorderLayout.CENTER);
-            itemPanel.add(removeButton, BorderLayout.EAST);
+            itemPanel.add(itemLabel);
             itemsPanel.add(itemPanel);
         }
         itemsPanel.revalidate();
         itemsPanel.repaint();
-    }
-
-    private JButton createCycleButton(String[] texts) {
-        JButton button = new JButton(texts[0]);
-        final int[] index = {0}; // Utiliser un tableau pour permettre la modification dans l'ActionListener
-
-        button.addActionListener(e -> {
-            index[0] = (index[0] + 1) % texts.length; // Incrémenter l'index et le remettre à zéro si nécessaire
-            button.setText(texts[index[0]]); // Mettre à jour le texte du bouton
-        });
-
-        return button;
-    }
-
-    public ArrayList<Item> getBoissons() {
-        return boissons;
-    }
-
-    public ArrayList<Item> getPlats() {
-        return plats;
-    }
-
-    public ArrayList<Item> getMenus() {
-        return menus;
     }
 
     private void commit(Object o) {
@@ -231,4 +228,21 @@ public class ViewCarte extends JPanel {
             emf.close();
         }
     }
+
+    private void setPlaceholderBehavior(JTextField field, String placeholder) {
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if (field.getText().equals(placeholder)) {
+                    field.setText("");
+                }
+            }
+            public void focusLost(java.awt.event.FocusEvent e) {
+                if (field.getText().isEmpty()) {
+                    field.setText(placeholder);
+                }
+            }
+        });
+    }
 }
+
+
