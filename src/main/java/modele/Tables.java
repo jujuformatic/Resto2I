@@ -25,8 +25,17 @@ public class Tables {
         this.nbPersonnes = 2;
     }
 
+    public Tables(int nbPersonnes) {
+        this.occupe = false;
+        this.nbPersonnes = nbPersonnes;
+    }
+
     public void setOccupe(boolean occupe) {
         this.occupe = occupe;
+    }
+
+    public boolean isOccupe() {
+        return occupe;
     }
 
     public int getId() {

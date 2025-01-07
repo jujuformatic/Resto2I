@@ -16,8 +16,8 @@ public class TestMenu {
         final EntityTransaction et = em.getTransaction();
         try {
             et.begin();
-            Item item1 = new Item("Pizza","Plat",15.50,10);
-            Item item2 = new Item("Patates","Plat",10.00,10);
+            Item item1 = new Item("Pizza", Item.Categorie.PLAT,15.50,10);
+            Item item2 = new Item("Patates", Item.Categorie.PLAT,10.00,10);
 
             HashSet<Item> items = new HashSet<>();
             items.add(item1);

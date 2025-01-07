@@ -32,12 +32,8 @@ public class Commande {
     @JoinColumn(name = "no_table")
     private Tables table;
 
-    @ManyToMany
-    @JoinTable(name = "commande_item", // Nom de la table de jonction
-            joinColumns = @JoinColumn(name = "commande_id"), // Colonne pour la commande
-            inverseJoinColumns = @JoinColumn(name = "item_id") // Colonne pour l'Item
-    )
-    private Set<Item> itemsCommande = new HashSet<>();
+    @OneToMany(mappedBy = "commande", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Commande_Item> itemsCommande = new HashSet<>();
 
     @OneToOne(mappedBy = "commande")
     private Ticket ticket;
@@ -67,27 +63,66 @@ public class Commande {
         table.setOccupe(true);
     }
 
-    public Commande(Tables table, String commentaire, Set<Item> items) {
+    public Commande(Tables table, String commentaire) {
         this(table);
         this.commentaire = commentaire;
-        this.itemsCommande = items;
     }
 
     public void addItem(Item item) {
-        // Vérifier si la collection items n'est pas null
+        // Vérifier si la collection itemsCommande n'est pas null
         if (this.itemsCommande == null) {
             this.itemsCommande = new HashSet<>();
         }
 
-        // Ajouter l'item au menu
-        this.itemsCommande.add(item);
+        Commande_Item commandeItem = null;
+
+        // Vérifier si l'item existe déjà dans la commande
+        for (Commande_Item ci : itemsCommande) {
+            if (ci.getItem().equals(item)) {
+                // Ajouter 1 à la quantité
+                ci.setQuantite(ci.getQuantite() + 1);
+                commandeItem = ci;
+                break;
+            }
+        }
+
+        // Si l'item n'existe pas déjà, créer un nouveau CommandeItem
+        if (commandeItem == null) {
+            commandeItem = new Commande_Item(this, item, 1);
+            this.itemsCommande.add(commandeItem);
+        }
 
         // Assurer la cohérence bidirectionnelle
         if (item.getCommandes() == null) {
             item.setCommandes(new HashSet<>());
         }
-        item.getCommandes().add(this);
+        item.getCommandes().add(commandeItem);
+
+        // Calculer le prix total
         this.calculerPrixTotal();
+    }
+
+    private Commande_Item findCommandeItem(Item item) {
+        for (Commande_Item ci : itemsCommande) {
+            if (ci.getItem().equals(item)) {
+                return ci;
+            }
+        }
+        return null;
+    }
+
+    public void removeItem(Item item) {
+        Commande_Item commandeItem = findCommandeItem(item);
+        if (commandeItem != null) {
+            if (commandeItem.getQuantite() > 1) {
+                commandeItem.setQuantite(commandeItem.getQuantite() - 1);
+            }
+            else {
+                itemsCommande.remove(commandeItem);
+                item.getCommandes().remove(commandeItem);
+            }
+            calculerPrixTotal();
+        }
     }
 
     public void validerCommande() {
@@ -97,9 +132,43 @@ public class Commande {
 
     public void calculerPrixTotal() {
         this.prixTotal = 0;
-        for(Item i : this.itemsCommande) {
-            this.prixTotal = this.prixTotal + i.getPrix();
+        for (Commande_Item ci : itemsCommande) {
+            this.prixTotal = this.prixTotal + (ci.getItem().getPrix() * ci.getQuantite());
         }
+    }
+
+    public int getId() {
+        return Id;
+    }
+
+    public boolean isValide() {
+        return valide;
+    }
+
+    public List<Commande_Item> getItemsCommande() {
+        List<Commande_Item> comms = new ArrayList<>();
+        for(Commande_Item ci : itemsCommande) {
+            comms.add(ci);
+        }
+        return comms;
+    }
+
+    public double getPrixTotal() {
+        //this.calculerPrixTotal();
+        return prixTotal;
+    }
+
+    public Timestamp getHoraire() {
+        return horaire;
+    }
+
+    public Tables getTable() {
+        return table;
+    }
+
+    public void setTable(Tables table) {
+        table.setOccupe(true);
+        this.table = table;
     }
 
     @Override
@@ -110,7 +179,7 @@ public class Commande {
                 ", prixTotal=" + prixTotal +
                 ", horaire=" + horaire +
                 ", commentaire='" + commentaire + '\'' +
-                ", itemsCommande=" +
+                ", itemsCommande=" + itemsCommande +
                 ", ticket=" + ticket +
                 ", facture=" + facture +
                 '}';

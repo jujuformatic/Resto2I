@@ -32,8 +32,8 @@ public class Item {
     @ManyToMany(mappedBy = "itemsMenu", cascade = CascadeType.PERSIST)
     private Set<Menu> menus = new HashSet<>();
 
-    @ManyToMany(mappedBy = "itemsCommande", cascade = CascadeType.PERSIST)
-    private Set<Commande> commandes = new HashSet<>();
+    @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Commande_Item> commandes = new HashSet<>();
 
     public Item(){
         this.hidden = false;
@@ -64,12 +64,16 @@ public class Item {
         this.menus = menus;
     }
 
-    public Set<Commande> getCommandes() {
+    public Set<Commande_Item> getCommandes() {
         return commandes;
     }
 
-    public void setCommandes(Set<Commande> commandes) {
+    public void setCommandes(Set<Commande_Item> commandes) {
         this.commandes = commandes;
+    }
+
+    public float getTVA() {
+        return TVA;
     }
 
     public void hide() {
@@ -104,6 +108,14 @@ public class Item {
         this.TVA = TVA;
     }
 
+    public boolean isHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
     @Override
     public String toString() {
         return "Item{" +
@@ -116,6 +128,14 @@ public class Item {
                 ", menus=" + menus +
                 ", commandes=" + commandes +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Item item = (Item) o;
+        return id == item.id && Double.compare(prix, item.prix) == 0 && Float.compare(TVA, item.TVA) == 0 && hidden == item.hidden && Objects.equals(nom, item.nom) && categorie == item.categorie && Objects.equals(menus, item.menus) && Objects.equals(commandes, item.commandes);
     }
 
     public enum Categorie {

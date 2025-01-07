@@ -2,6 +2,7 @@ package modele;
 
 import jakarta.persistence.*;
 
+import java.awt.*;
 import java.util.*;
 
 @Entity
@@ -16,7 +17,7 @@ public class Menu extends Item{
 
     public Menu() {
         super();
-        this.setCategorie("Menu");
+        this.setCategorie(Categorie.MENU);
     }
 
     public Menu(String nom, double prix, float TVA) {

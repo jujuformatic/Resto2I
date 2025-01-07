@@ -17,8 +17,8 @@ public class TestCommande {
         final EntityTransaction et = em.getTransaction();
         try {
             et.begin();
-            Item item1 = new Item("Pizza","Plat",15.50,10);
-            Item item2 = new Item("Patates","Plat",10.00,10);
+            Item item1 = new Item("Pizza", Item.Categorie.PLAT,15.50,10);
+            Item item2 = new Item("Patates", Item.Categorie.PLAT,10.00,10);
 
             Tables table1 = new Tables();
             Tables table2 = new Tables();
@@ -28,7 +28,7 @@ public class TestCommande {
             items.add(item2);
 
             Commande commande1 = new Commande(table1);
-            Commande commande2 = new Commande(table2,"RAS",items);
+            Commande commande2 = new Commande(table2,"RAS");
 
             commande1.addItem(item1);
 

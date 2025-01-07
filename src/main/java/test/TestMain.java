@@ -17,8 +17,9 @@ public class TestMain {
         final EntityTransaction et = em.getTransaction();
             try {
             et.begin();
-            Item item1 = new Item("Pizza","Plat",15.50,10);
-            Item item2 = new Item("Patates","Plat",10.00,10);
+            Item item1 = new Item("Pizza", Item.Categorie.PLAT,15.50,10);
+            Item item2 = new Item("Patates", Item.Categorie.PLAT,10.00,10);
+            Item item3 = new Item("Paix Dieu", Item.Categorie.BOISSON,10.00,15);
 
             Tables table1 = new Tables();
             Tables table2 = new Tables();
@@ -32,10 +33,13 @@ public class TestMain {
             Menu menu2 = new Menu("menu2",30.00,10,items);
 
             Commande commande1 = new Commande(table1);
-            Commande commande2 = new Commande(table2,"RAS",items);
+            Commande commande2 = new Commande(table2,"RAS");
 
             commande1.addItem(item1);
             commande2.addItem(menu1);
+            commande2.addItem(menu1);
+            commande1.addItem(item1);
+            commande1.addItem(item3);
 
             Facture f1 = new Facture(commande1,"Michel","10 rue ...","paiement immédiat",150);
 
@@ -46,6 +50,7 @@ public class TestMain {
 
             em.persist(item1);
             em.persist(item2);
+            em.persist(item3);
 
             em.persist(table1);
             em.persist(table2);
