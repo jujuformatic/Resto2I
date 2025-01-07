@@ -12,7 +12,7 @@ public class RetrieveData {
 
         try {
             // Récupérer toutes les commandes
-            TypedQuery<Commande> query = em.createQuery("SELECT c FROM Commande c", Commande.class);
+            TypedQuery<Commande> query = em.createQuery("SELECT c FROM Commande c ORDER BY c.horaire DESC", Commande.class);
             List<Commande> commandes = query.getResultList();
 
             for (Commande commande : commandes) {
