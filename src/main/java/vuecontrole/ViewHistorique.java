@@ -125,6 +125,10 @@ public class ViewHistorique extends JPanel {
         ViewCommande commandeView = new ViewCommande(cardLayout, mainPanel, new ViewCarte(cardLayout, mainPanel), "Historique",commande);
         mainPanel.add(commandeView, "CommandeDetail");
         cardLayout.show(mainPanel, "CommandeDetail");
-        commandeView.setButtonsEnabled(false);
+        if(commande.isValide()) {
+            commandeView.setButtonsEnabled(false);
+        } else {
+            commandeView.setButtonsEnabled(true);
+        }
     }
 }

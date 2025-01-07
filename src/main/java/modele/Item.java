@@ -72,6 +72,10 @@ public class Item {
         this.commandes = commandes;
     }
 
+    public float getTVA() {
+        return TVA;
+    }
+
     public void hide() {
         this.hidden = true;
     }

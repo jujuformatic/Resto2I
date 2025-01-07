@@ -12,6 +12,7 @@ import modele.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
@@ -31,6 +32,7 @@ public class ViewCommande extends JPanel {
     private String previousView;
     private Commande commande;
     private Tables table = new Tables();
+    private boolean newCommande;
 
     public ViewCommande(CardLayout cardLayout, JPanel mainPanel, ViewCarte carte, String previousView, Commande command) {
         this.setLayout(new BorderLayout());
@@ -50,13 +52,15 @@ public class ViewCommande extends JPanel {
 
         // Total price and table number panel
         if (command == null) {
-            this.commande = new Commande();
             getTableDispo();
-            commande.setTable(table);
+            this.commande = new Commande(table);
+            merge(table);
+            newCommande = true;
         }
         else {
             this.commande = command;
             this.table = command.getTable();
+            newCommande = false;
         }
 
 
@@ -103,7 +107,7 @@ public class ViewCommande extends JPanel {
         cancelButton = new JButton("Annuler la Commande");
         cancelButton.addActionListener(e -> cancelCommand(cardLayout, mainPanel));
         JButton printBillButton = new JButton("Imprimer le Ticket");
-        printBillButton.addActionListener(e -> displayTicket(commande));
+        printBillButton.addActionListener(e -> displayTicket(cardLayout, mainPanel));
 
         recapButtons.add(validateButton);
         recapButtons.add(cancelButton);
@@ -164,8 +168,10 @@ public class ViewCommande extends JPanel {
         for (Item item : items) {
             JButton itemButton = new JButton(item.getNom());
             itemButton.addActionListener(e -> addItemToRecap(item));
+            itemButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+            itemButton.setAlignmentX(Component.CENTER_ALIGNMENT);
             carteButtons.add(itemButton); // Ajouter le bouton à la liste
-            itemsPanel.add(itemButton);
+            itemsPanel.add(itemButton, BorderLayout.CENTER);
         }
 
         panel.add(new JScrollPane(itemsPanel), BorderLayout.CENTER);
@@ -181,7 +187,6 @@ public class ViewCommande extends JPanel {
     }
 
     private void initRecap() {
-        System.out.println(commande);
         List<Commande_Item> itemsCommande = commande.getItemsCommande();
 
         for (Commande_Item ci : itemsCommande) {
@@ -218,7 +223,9 @@ public class ViewCommande extends JPanel {
 
 
         recapArea.setText(recapText.toString());
-        totalPriceLabel.setText("Total: " + commande.getPrixTotal() + "€");
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
+        String totalFormat = decimalFormat.format(commande.getPrixTotal());
+        totalPriceLabel.setText("Total: " + totalFormat + "€");
     }
 
     private void validateCommand(CardLayout cardLayout, JPanel mainPanel) {
@@ -231,7 +238,13 @@ public class ViewCommande extends JPanel {
         }
         resetCommande();
         commande.validerCommande();
-        commit(commande);
+        merge(table);
+
+        if(newCommande) {
+            commit(commande);
+        } else {
+            merge(commande);
+        }
     }
 
     private void cancelCommand(CardLayout cardLayout, JPanel mainPanel) {
@@ -243,16 +256,23 @@ public class ViewCommande extends JPanel {
             cardLayout.show(mainPanel, "MainMenu");
         }
         resetCommande();
+        table.setOccupe(false);
+        merge(table);
     }
 
     private void retourMenu(CardLayout cardLayout, JPanel mainPanel) {
 
-        System.out.println("Commande enregistrée :");
-        recapItems.forEach((item, count) -> System.out.println(item + " x " + count));
+        if(!commande.isValide()) {
+            System.out.println("Commande enregistrée :");
+            recapItems.forEach((item, count) -> System.out.println(item + " x " + count));
+            if(newCommande) {
+                commit(commande);
+            } else {
+                merge(commande);
+            }
+        }
         cardLayout.show(mainPanel, "MainMenu");
-
         resetCommande();
-        commit(commande);
     }
 
     private void resetCommande() {
@@ -290,9 +310,12 @@ public class ViewCommande extends JPanel {
         ticketPanel.add(Box.createVerticalStrut(10));
 
         // Détails de la transaction
-        ticketPanel.add(new JLabel("N° de transaction : 215154")).setFont(monospacedFont);
-        ticketPanel.add(new JLabel("Table n°3")).setFont(monospacedFont);
-        ticketPanel.add(new JLabel("Payé le 20/11/2024 à 19h00")).setFont(monospacedFont);
+        String horaire = String.valueOf(commande.getHoraire());
+        String date = horaire.substring(8,10) + "/" + horaire.substring(5,7) + "/" + horaire.substring(0,4);
+        String heure = horaire.substring(11,13) + "h" + horaire.substring(14,16);
+        ticketPanel.add(new JLabel("N° de transaction : " + commande.getId())).setFont(monospacedFont);
+        ticketPanel.add(new JLabel("Table n°" + commande.getTable().getId())).setFont(monospacedFont);
+        ticketPanel.add(new JLabel("Le " + date + " à " + heure)).setFont(monospacedFont);
         ticketPanel.add(Box.createVerticalStrut(10));
 
         // Entête des colonnes
@@ -300,25 +323,32 @@ public class ViewCommande extends JPanel {
         header.setFont(monospacedFont);
         ticketPanel.add(header);
 
+        double prixTVA = 0;
         // Détails des articles
         for (Item item : recapItems.keySet()) {
             int count = recapItems.get(item);
-            String itemLine = String.format("%-20s %5d %10s", item, count, "10€ + 10%");
+            String itemLine = String.format("%-20s %5d %10s", item.getNom(), count, item.getPrix() + "€ + " + item.getTVA() + "%");
             JLabel itemLabel = new JLabel(itemLine);
             itemLabel.setFont(monospacedFont);
             ticketPanel.add(itemLabel);
+            prixTVA += (item.getPrix() * count * (1 + (item.getTVA() / 100)));
         }
 
         ticketPanel.add(Box.createVerticalStrut(10));
 
+        double total = commande.getPrixTotal();
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
+        String totalFormat = decimalFormat.format(total);
+        String prixTVAFormat = decimalFormat.format(prixTVA);
+
         // Totaux
-        ticketPanel.add(new JLabel("Total HT : 55.55€")).setFont(monospacedFont);
-        ticketPanel.add(new JLabel("Avec TVA : 10€")).setFont(monospacedFont);
+        ticketPanel.add(new JLabel("Total HT : " + totalFormat + "€")).setFont(monospacedFont);
+        ticketPanel.add(new JLabel("Avec TVA : " + prixTVAFormat + "€")).setFont(monospacedFont);
 
         return ticketPanel;
     }
 
-    private void displayTicket(Commande commande) {
+    private void displayTicket(CardLayout cardLayout, JPanel mainPanel) {
         JDialog ticketDialog = new JDialog();
         ticketDialog.setTitle("Ticket de Caisse");
         ticketDialog.setSize(300, 400);
@@ -328,9 +358,17 @@ public class ViewCommande extends JPanel {
         ticketDialog.add(ticketPanel);
         ticketDialog.setVisible(true);
 
+        commande.validerCommande();
+        setButtonsEnabled(false);
+
         Ticket t1 = new Ticket(commande);
-        commit(commande);
-        commit(t1);
+        merge(table);
+        if(newCommande) {
+            commit(commande);
+            commit(t1);
+        } else {
+            merge(commande);
+        }
     }
 
     private void getTableDispo() {
@@ -355,6 +393,27 @@ public class ViewCommande extends JPanel {
             et.commit();
         } catch (Exception ex){
             System.out.println(">>>>> Erreur !!");
+            ex.printStackTrace();
+            if (et.isActive()) {
+                et.rollback();
+            }
+        } finally {
+            em.close();
+            emf.close();
+        }
+    }
+
+    private void merge(Object o) {
+        final EntityManagerFactory emf = Persistence.createEntityManagerFactory("Resto2I");
+        final EntityManager em = emf.createEntityManager();
+        final EntityTransaction et = em.getTransaction();
+        try {
+            et.begin();
+            em.merge(o);
+
+            et.commit();
+        } catch (Exception ex){
+            System.out.println(">>>>> Erreur !!" + "\n" + "         " + ex);
             ex.printStackTrace();
             if (et.isActive()) {
                 et.rollback();

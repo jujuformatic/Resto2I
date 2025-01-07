@@ -8,6 +8,7 @@ import modele.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,9 +135,14 @@ public class ViewCarte extends JPanel {
     private void updateItemsPanel(JPanel itemsPanel, ArrayList<Item> items) {
         itemsPanel.removeAll();
         for (Item item : items) {
+            double prix = item.getPrix();
+            DecimalFormat decimalFormat = new DecimalFormat("#.00");
+            String prixFormat = decimalFormat.format(prix);
+            String label = prixFormat + "€ | " + item.getNom();
+
             JPanel itemPanel = new JPanel(new BorderLayout());
-            JLabel itemLabel = new JLabel(item.getNom());
-            JButton removeButton = new JButton("-");
+            JLabel itemLabel = new JLabel(label);
+            JButton removeButton = new JButton("x");
             removeButton.addActionListener(e -> {
                 int confirmation = JOptionPane.showConfirmDialog(
                         this,

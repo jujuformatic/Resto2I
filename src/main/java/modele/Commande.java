@@ -141,6 +141,10 @@ public class Commande {
         return Id;
     }
 
+    public boolean isValide() {
+        return valide;
+    }
+
     public List<Commande_Item> getItemsCommande() {
         List<Commande_Item> comms = new ArrayList<>();
         for(Commande_Item ci : itemsCommande) {
@@ -163,8 +167,8 @@ public class Commande {
     }
 
     public void setTable(Tables table) {
-        this.table = table;
         table.setOccupe(true);
+        this.table = table;
     }
 
     @Override
