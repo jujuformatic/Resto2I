@@ -9,6 +9,8 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import modele.*;
+import observer.*;
+import observer.Observer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,11 +18,10 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 
-public class ViewCommande extends JPanel {
+public class ViewCommande extends JPanel implements Observer{
     private JButton retourMenu;
     private JButton validateButton;
     private JButton cancelButton;
-
     private JPanel cartePanel;
     private JPanel recapPanel;
     private JTextArea recapArea;
@@ -31,10 +32,14 @@ public class ViewCommande extends JPanel {
     private ArrayList<JButton> carteButtons; // Liste pour stocker les boutons de la carte
     private String previousView;
     private Commande commande;
+    private ViewCarte carte;
     private Tables table = new Tables();
     private boolean newCommande;
+    private RetrieveData data;
 
     public ViewCommande(CardLayout cardLayout, JPanel mainPanel, ViewCarte carte, String previousView, Commande command) {
+        this.carte = carte;
+
         this.setLayout(new BorderLayout());
         this.previousView = previousView;
         carteButtons = new ArrayList<>();
@@ -117,33 +122,12 @@ public class ViewCommande extends JPanel {
         this.add(recapPanel, BorderLayout.WEST);
 
         // Get items BDD
-        RetrieveData data = new RetrieveData();
-        List<Item> items = data.getItems();
-        List<Item> boissons = new ArrayList<>();
-        List<Item> plats = new ArrayList<>();
-        List<Item> menus = new ArrayList<>();
-
-        for(Item i : items) {
-            if (!i.isHidden()) {
-                if (i.getCategorie() == Item.Categorie.BOISSON) {
-                    boissons.add(i);
-                }
-                if (i.getCategorie() == Item.Categorie.PLAT) {
-                    plats.add(i);
-                }
-                if (i.getCategorie() == Item.Categorie.MENU) {
-                    menus.add(i);
-                }
-            }
-        }
-
-
+        this.data = new RetrieveData();
+        carte.addObserver((Observer) this);  // S'abonner aux changements
 
         // Carte Panel
         cartePanel = new JPanel(new GridLayout(1, 3, 10, 10));
-        cartePanel.add(createCarteColumn("Boissons", boissons));
-        cartePanel.add(createCarteColumn("Plats", plats));
-        cartePanel.add(createCarteColumn("Menus", menus));
+        update();  // Initialiser avec les données existantes
 
         initRecap();
 
@@ -220,7 +204,6 @@ public class ViewCommande extends JPanel {
 
             recapText.append(item.getNom()).append(" x ").append(count).append("\n");
         }
-
 
         recapArea.setText(recapText.toString());
         DecimalFormat decimalFormat = new DecimalFormat("#.00");
@@ -422,5 +405,31 @@ public class ViewCommande extends JPanel {
             em.close();
             emf.close();
         }
+    }
+
+    @Override
+    public void update() {
+        List<Item> items = data.getItems();
+        List<Item> boissons = new ArrayList<>();
+        List<Item> plats = new ArrayList<>();
+        List<Item> menus = new ArrayList<>();
+
+        for (Item i : items) {
+            if (!i.isHidden()) {
+                switch (i.getCategorie()) {
+                    case BOISSON -> boissons.add(i);
+                    case PLAT -> plats.add(i);
+                    case MENU -> menus.add(i);
+                }
+            }
+        }
+
+        // Mise à jour de la carte
+        cartePanel.removeAll();
+        cartePanel.add(createCarteColumn("Boissons", boissons));
+        cartePanel.add(createCarteColumn("Plats", plats));
+        cartePanel.add(createCarteColumn("Menus", menus));
+        cartePanel.revalidate();
+        cartePanel.repaint();
     }
 }
