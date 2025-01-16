@@ -111,6 +111,10 @@ public class ViewHistorique extends JPanel {
             horaire = horaire.substring(8,10) + "/" + horaire.substring(5,7) + "/" + horaire.substring(0,4);
             String prix = String.valueOf(comm.getPrixTotal());
             JButton cmdButton = new JButton("<html>• n°" + id + "<br>• " + horaire + "<br>• " + prix + "€" + "</html>");
+            if(comm.isValide()) {
+                cmdButton.setBackground(new Color(164,230,138));
+                cmdButton.setOpaque(true);
+            }
             cmdButton.setPreferredSize(new Dimension(100, 80));
             cmdButton.addActionListener(e -> openCommandeDetail(comm));
             commandesPanel.add(cmdButton);
