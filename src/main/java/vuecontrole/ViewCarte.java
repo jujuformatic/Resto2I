@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.Persistence;
 import modele.*;
+import observer.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -12,10 +13,12 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ViewCarte extends JPanel {
+public class ViewCarte extends JPanel implements Observable {
     private ArrayList<Item> boissons;
     private ArrayList<Item> plats;
     private ArrayList<Item> menus;
+
+    private List<Observer> observers;
 
     public ViewCarte(CardLayout cardLayout, JPanel mainPanel) {
         this.setLayout(new BorderLayout());
@@ -40,6 +43,8 @@ public class ViewCarte extends JPanel {
         JButton retourMenu = new JButton("Retour au Menu");
         retourMenu.addActionListener(e -> cardLayout.show(mainPanel, "MainMenu"));
         this.add(retourMenu, BorderLayout.SOUTH);
+
+        this.observers = new ArrayList<Observer>();
     }
 
     private void initializeData() {
@@ -69,7 +74,6 @@ public class ViewCarte extends JPanel {
         updateItemsPanel(itemsPanel, items);
 
         // Add item section
-
         JPanel addItemPanel = new JPanel(new BorderLayout());
         JTextField newItemField = new JTextField("Nom de l'article");
         JTextField newItemPrice = new JTextField("Prix de l'article");
@@ -91,6 +95,7 @@ public class ViewCarte extends JPanel {
         bottomPanel.add(addButton, BorderLayout.EAST);
 
         addButton.addActionListener(e -> {
+            boolean validation = true;
             Item.Categorie cat = switch (title) {
                 case "Boissons" -> Item.Categorie.BOISSON;
                 case "Plats" -> Item.Categorie.PLAT;
@@ -100,18 +105,21 @@ public class ViewCarte extends JPanel {
             String itemName = newItemField.getText().trim();
             if (itemName.isEmpty() || itemName.equals("Nom de l'article")) {
                 JOptionPane.showMessageDialog(this, "Veuillez entrer un nom valide.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                validation = false;
                 return;
             }
 
             double itemPrice = 0.0;
             try {
                 itemPrice = Double.parseDouble(newItemPrice.getText().trim());
+                if (itemPrice <= 0) {
+                    JOptionPane.showMessageDialog(this, "Veuillez entrer un prix supérieur à 0.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    validation = false;
+                    return;
+                }
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Veuillez entrer un prix valide.", "Erreur", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (itemPrice <= 0) {
-                JOptionPane.showMessageDialog(this, "Veuillez entrer un prix supérieur à 0.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                validation = false;
                 return;
             }
 
@@ -119,16 +127,19 @@ public class ViewCarte extends JPanel {
             float TVA = (tvaStr != null && !tvaStr.equals("TVA")) ? Float.parseFloat(tvaStr.replace("%", "")) : 0.0f;
             if (TVA == 0.0f) {
                 JOptionPane.showMessageDialog(this, "Veuillez sélectionner une TVA.", "Erreur", JOptionPane.ERROR_MESSAGE);
+                validation = false;
                 return;
             }
 
             Item newItem = new Item(itemName,cat,itemPrice,TVA);
-            if (!itemName.isEmpty() && !items.contains(newItem)) {
+            if (validation) {
                 items.add(newItem);
                 newItemField.setText("Nom de l'article");
                 newItemPrice.setText("Prix de l'article");
                 commit(newItem);
                 updateItemsPanel(itemsPanel, items);
+
+                notifyObservers();
             }
         });
 
@@ -147,7 +158,7 @@ public class ViewCarte extends JPanel {
             double prix = item.getPrix();
             DecimalFormat decimalFormat = new DecimalFormat("#.00");
             String prixFormat = decimalFormat.format(prix);
-            String label = prixFormat + "€ | " + item.getNom();
+            String label = prixFormat + "€ (" + item.getTVA() + "%) | " + item.getNom();
 
             JPanel itemPanel = new JPanel(new BorderLayout());
             itemPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
@@ -168,6 +179,8 @@ public class ViewCarte extends JPanel {
                         item.setHidden(true);
                         updateItemsPanel(itemsPanel, items);
                         merge(item);
+
+                        notifyObservers();
                     }
                 }
 
@@ -242,6 +255,24 @@ public class ViewCarte extends JPanel {
                 }
             }
         });
+    }
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+        System.out.println("Observer ajouté");
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for(Observer observer : observers){
+            observer.update();
+        }
     }
 }
 
