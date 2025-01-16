@@ -18,6 +18,8 @@ public class Fenetre extends JFrame {
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+
         // Initialize CardLayout and main panel
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
@@ -42,5 +44,6 @@ public class Fenetre extends JFrame {
         // Add main panel to frame
         this.add(mainPanel);
         this.setVisible(true);
+        device.setFullScreenWindow(this);
     }
 }
